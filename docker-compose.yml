@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+
+  mysql:
+    container_name: "mysql"
+    hostname: "mysql"
+    image: ghcr.io/antonio-alexander/sql-blog-migration:latest
+    restart: "always"
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-sql_blog_migration}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sql_blog_migration}
+      MYSQL_USER: ${MYSQL_USER:-sql_blog_migration}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sql_blog_migration}
+      AUTOMATIC_MIGRATION: ${AUTOMATIC_MIGRATION:-false}
+    build:
+      context: ./
+      dockerfile: ./cmd/Dockerfile
+      args:
+        PLATFORM: ${PLATFORM:-linux/amd64}
+        GO_ARCH: ${GO_ARCH:-amd64}
+        GO_ARM: ${GO_ARM:-7}
+    volumes:
+      - ./tmp:/tmp
