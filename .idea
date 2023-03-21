@@ -1,0 +1,53 @@
+# Things to do
+
+- update the Dockerfile/integration solution to use a configurable table name to configure the goose table
+
+## Feedback
+
+- the examples provided are distracting because they do things that you _shouldn't_ do when migrating a database
+- generally, it's better to copy the data from a table, drop and re-create the table rather than trying to edit it live because it's A) faster and B) avoids some of the maintenance headaches that come from certain changes
+- the solutions chosen for migration should depend on how much data is in the table being migrated
+
+ETL(CTL): extract(copy), transform, load to reduce overall downtime/unavailability
+
+## Update Data Architecture on what not to do for migrations
+
+This is a high-level list, which I think is a bit more organic:
+
+- you shouldn't perform operations that _destroy data_
+  - changing to smaller data types
+  - dropping columns
+  - incompatible data type changes
+  - changes that fundamentally modify data types from the perspective of consumers
+- you shouldn't perform operations that can [potentially] destroy relationships
+  - avoid changing keys
+  - avoid changing partitioned tables
+
+## Updated examples
+
+Examples:
+
+- adding new column (with default)
+- increasing column size
+- adding/removing index
+- adding check/not null constraint (with validatity)
+
+## Modification of Migration to include steps for verification
+
+I think that a manual verification step would be useful for manual migrations: to be able to say, perform the migration, and THEN commit it by not "removing" old data, but renaming it.
+
+  A. Perform migration/change
+
+   1. create new table with prefix
+   2. select insert data from old table into new table
+
+  B. Validate Change
+
+  C. Commit Migration
+
+   1. rename old table
+   2. rename new table
+
+## Questions
+
+How to validate that there's enough space to copy the table over?

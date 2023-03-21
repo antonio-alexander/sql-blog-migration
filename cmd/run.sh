@@ -71,6 +71,8 @@ EOF
 	/usr/bin/mysqld --user=mysql --bootstrap --verbose=0 --skip-name-resolve --skip-networking=0 < $tfile
 	rm -f $tfile
 
+	/usr/bin/mysqld --user=mysql --bootstrap --verbose=0 --skip-name-resolve --skip-networking=0 < /sql_blog_migration/$EMPLOYEES_SQL
+
 	echo
 	echo 'MySQL init process done. Ready for start up.'
 	echo
@@ -112,5 +114,13 @@ do
 		. ${i}
 	fi
 done
+
+# migrate database
+if [ "$AUTOMATIC_MIGRATION" == "true" ]
+then
+    cd /sql_blog_migration
+    echo ...automatic migration enabled, attempting to migrate
+    goose mysql "root:$MYSQL_ROOT_PASSWORD@/sql_blog_migration?parseTime=true&&multiStatements=true" --table employees_goose_db_version up
+fi
 
 wait $mysql_pid

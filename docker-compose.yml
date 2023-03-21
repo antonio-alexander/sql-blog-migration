@@ -22,5 +22,12 @@ services:
         PLATFORM: ${PLATFORM:-linux/amd64}
         GO_ARCH: ${GO_ARCH:-amd64}
         GO_ARM: ${GO_ARM:-7}
+        GOOSE_VERSION: ${GOOSE_VERSION:-v3.5.3}
+        MYSQL_DATABASE: ${MYSQL_DATABASE:-sql_blog_migration}
+        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-sql_blog_migration}
+        MYSQL_USER: ${MYSQL_USER:-sql_blog_migration}
+        MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sql_blog_migration}
+        EMPLOYEES_SQL: ${EMPLOYEES_SQL:-003_employees.sql}
     volumes:
       - ./tmp:/tmp
+      - ./tmp/mysql:/var/lib/mysql
