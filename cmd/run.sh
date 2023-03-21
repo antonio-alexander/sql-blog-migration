@@ -61,10 +61,11 @@ EOF
 			echo "[i] with character set: 'utf8' and collation: 'utf8_general_ci'"
 			echo "CREATE DATABASE IF NOT EXISTS \`$MYSQL_DATABASE\` CHARACTER SET utf8 COLLATE utf8_general_ci;" >> $tfile
 		fi
-
-	 if [ "$MYSQL_USER" != "" ]; then
-		echo "[i] Creating user: $MYSQL_USER with password $MYSQL_PASSWORD"
-		echo "GRANT ALL ON \`$MYSQL_DATABASE\`.* to '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';" >> $tfile
+	 	if [ "$MYSQL_USER" != "" ]; then
+			echo "[i] Creating user: $MYSQL_USER with password $MYSQL_PASSWORD"
+			echo "GRANT ALL ON \`$MYSQL_DATABASE\`.* to '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';" >> $tfile
+			echo "[i] Creating user: $MYSQL_USER with password $MYSQL_PASSWORD"
+			echo "GRANT ALL ON \`$MYSQL_DATABASE\`.* to '$MYSQL_USER'@'localhost' IDENTIFIED BY '$MYSQL_PASSWORD';" >> $tfile
 	    fi
 	fi
 
@@ -95,10 +96,17 @@ until mysqladmin -uroot -p${MYSQL_ROOT_PASSWORD} ping >/dev/null 2>&1; do
     sleep 0.2
 done
 
+if [[ ! -z "`mysql -u$MYSQL_USER -p$MYSQL_PASSWORD -r -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='sql_blog_migration'"`" ]];
+then
+  mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} < /sql_blog_migration/$EMPLOYEES_SQL
+else
+  echo "[i] sql_blog_migration database already present, skipping creation"
+fi
+
 for f in /docker-entrypoint-initdb.d/*; do
 	case "$f" in
-		*.sql)    echo "$0: running $f"; mysql -uroot -p${MYSQL_ROOT_PASSWORD} < "$f"; echo ;;
-		*.sql.gz) echo "$0: running $f"; gunzip -c "$f" | mysql -uroot -p${MYSQL_ROOT_PASSWORD} < "$f"; echo ;;
+		*.sql)    echo "$0: running $f"; mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} < "$f"; echo ;;
+		*.sql.gz) echo "$0: running $f"; gunzip -c "$f" | mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} < "$f"; echo ;;
 		*)        echo "$0: ignoring or entrypoint initdb empty $f" ;;
 	esac
 	echo
@@ -112,5 +120,13 @@ do
 		. ${i}
 	fi
 done
+
+# migrate database
+if [ "$AUTOMATIC_MIGRATION" == "true" ]
+then
+    cd /sql_blog_migration/migration
+    echo ...automatic migration enabled, attempting to migrate
+    goose mysql "$MYSQL_USER:$MYSQL_PASSWORD@/sql_blog_migration?parseTime=true&&multiStatements=true" --table employees_goose_db_version up
+fi
 
 wait $mysql_pid
